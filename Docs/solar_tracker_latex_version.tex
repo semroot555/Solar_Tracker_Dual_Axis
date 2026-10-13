@@ -1,0 +1,193 @@
+% Solar Tracker -- concise English project report
+% Compile with: pdflatex solar_tracker_github.tex
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{amsmath}
+
+% Minimal design with one soft accent colour
+\definecolor{pink}{HTML}{B85C78}
+\definecolor{text}{HTML}{383038}
+\color{text}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=pink,
+  linkcolor=pink,
+  pdftitle={Two-Axis Solar Tracker},
+  pdfauthor={Group 3 -- ENSA Agadir}
+}
+
+\titleformat{\section}
+  {\large\bfseries\color{pink}}
+  {}{0pt}{}
+  [\vspace{-0.35em}\color{pink}\titlerule]
+\titlespacing*{\section}{0pt}{1.1em}{0.5em}
+
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{pink}}
+  {}{0pt}{}
+\titlespacing*{\subsection}{0pt}{0.7em}{0.2em}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlist{nosep,leftmargin=1.4em}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\begin{document}
+
+\begin{center}
+  {\Large\bfseries\color{pink} Two-Axis Solar Tracker}\\[0.2em]
+  {\large Arduino control, servo movement and 3D design}\\[0.5em]
+  {\small Arduino Nano \textbullet{} LDR sensors \textbullet{} SG90 servos \textbullet{} 3D-printed structure}\\[0.35em]
+  {\footnotesize Group 3 -- ENSA Agadir -- 2025/2026}
+\end{center}
+
+\section{Project overview}
+
+This project focuses on the design of a two-axis solar tracker prototype. The system is based on an Arduino Nano, four light-dependent resistors (LDRs), and two SG90 servo motors. The Arduino reads the sensor values and uses them to control the horizontal and vertical movements of the structure.
+
+Our work focused on three main areas: programming the Arduino, testing the movement of the servo motors, and designing and 3D-printing the mechanical structure.
+
+\textbf{Scope of this report.} The solar panel was not used to measure electrical output during this project. No energy, efficiency, or comparison measurements were calculated, so this report does not present any energy-performance results.
+
+\section{Project objectives}
+
+The objectives were to:
+\begin{itemize}
+  \item control two servo motors with an Arduino Nano;
+  \item test horizontal and vertical movement;
+  \item prepare a control method based on four LDR sensors;
+  \item design a suitable two-axis mechanical structure in 3D;
+  \item manufacture the structure using 3D printing.
+\end{itemize}
+
+\section{Components}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}l c Y@{}}
+\toprule
+\textbf{Component} & \textbf{Quantity} & \textbf{Purpose} \\
+\midrule
+Arduino Nano & 1 & Runs the program and controls the servos \\
+SG90 servo motor & 2 & Moves the horizontal and vertical axes \\
+Light-dependent resistor (LDR) & 4 & Measures light from four directions \\
+10\,k$\Omega$ resistor & 4 & Forms a voltage divider with each LDR \\
+Breadboard and jumper wires & -- & Used for circuit assembly and testing \\
+3D-printed structure & 1 & Holds the motors, sensors and future panel \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Arduino code}
+
+The program is written in C++ for the Arduino environment and uses the \texttt{Servo.h} library. The code begins by defining the pins, the control parameters and the initial servo positions.
+
+\subsection{Pin assignment}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Element} & \textbf{Pin} & \textbf{Function} \\
+\midrule
+Top-left LDR & A0 & Light reading $v_1$ \\
+Top-right LDR & A1 & Light reading $v_2$ \\
+Bottom-left LDR & A2 & Light reading $v_3$ \\
+Bottom-right LDR & A3 & Light reading $v_4$ \\
+Horizontal servo & D9 & Azimuth movement \\
+Vertical servo & D10 & Elevation movement \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Control parameters}
+
+The current code uses the following values:
+\begin{itemize}
+  \item \texttt{TOLERANCE = 50}: creates a dead zone and reduces oscillation;
+  \item \texttt{STEP\_DEG = 1}: moves a servo by one degree per correction;
+  \item \texttt{NIGHT\_THR = 100}: activates night mode when all LDR readings are low;
+  \item \texttt{DELAY\_MS = 500}: waits half a second between normal corrections.
+\end{itemize}
+
+\subsection{Program sequence}
+
+In \texttt{setup()}, the two servos are attached to pins D9 and D10, moved to their initial position of $90^\circ$, and connected to the Serial Monitor at 9600 baud.
+
+In \texttt{loop()}, the Arduino reads the four LDR values using \texttt{analogRead()}. It then checks whether the highest reading is below the night threshold. In night mode, both servos return to the central rest position and the program waits longer before checking again.
+
+During normal operation, the code calculates two differential errors:
+\[
+\Delta_H=(v_1+v_3)-(v_2+v_4),\qquad
+\Delta_V=(v_1+v_2)-(v_3+v_4).
+\]
+
+If the absolute value of an error is greater than the tolerance, the corresponding servo moves by one degree. The horizontal servo is limited to $0^\circ$--$180^\circ$, while the vertical servo is limited to $30^\circ$--$150^\circ$. The Serial Monitor displays the four LDR readings and the current positions of both servos, which makes debugging easier.
+
+The main source file can be stored in the repository as \texttt{solar\_tracker.ino}.
+
+\section{3D modelling}
+
+The mechanical structure was designed as a 3D model before being printed. It includes:
+\begin{itemize}
+  \item a fixed base;
+  \item a support for the horizontal rotation;
+  \item a moving arm for the second axis;
+  \item a platform for the sensors and the future solar panel;
+  \item mounting points for the two servo motors.
+\end{itemize}
+
+The model was adjusted to make the parts fit together and to allow the servos to rotate without blocking the structure. 3D modelling made it possible to check the dimensions and the position of the components before manufacturing the parts.
+
+\section{3D printing and assembly}
+
+After the modelling stage, the structure was produced using 3D printing. The printed parts were assembled with the servo motors and the electronic components. During assembly, we checked:
+\begin{itemize}
+  \item that the servo motors were properly fixed;
+  \item that both axes could move freely;
+  \item that the parts were aligned;
+  \item that the platform was stable;
+  \item that the sensors and the future panel could be installed.
+\end{itemize}
+
+Some mechanical details were adjusted when necessary to improve the fit and movement of the printed parts.
+
+\section{Current status and limitations}
+
+The project successfully allowed us to work on Arduino programming, servo movement and the 3D design and fabrication of the tracker structure. The current prototype is focused on the mechanical movement and the control system.
+
+The solar panel was not powered or tested for energy production. Therefore, the following aspects remain outside the scope of the current project: electrical output, efficiency, energy gain, and comparison with a fixed panel.
+
+Possible next steps are:
+\begin{itemize}
+  \item install the four LDRs on the printed sensor platform;
+  \item test the response of the tracker to light from different directions;
+  \item improve the panel mounting system;
+  \item provide a stable power supply for the servos;
+  \item synchronise the stored servo positions with the physical position after night mode;
+  \item record sensor values and servo positions through the Serial Monitor.
+\end{itemize}
+
+\section{Conclusion}
+
+This project combines Arduino programming, servo motor control, 3D modelling and 3D printing. The work completed so far concerns the movement of the two-axis mechanism and the construction of its support structure. A future version can add the LDR sensors and test the complete light-following function, but no energy-performance claims are made in this report.
+
+\vfill
+\begin{center}
+  {\small\color{pink}\textit{Group 3 -- ENSA Agadir}}
+\end{center}
+
+\end{document}
